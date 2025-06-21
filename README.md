@@ -14,7 +14,7 @@ Un web scraper simple écrit en Go utilisant la bibliothèque Colly.
 2. Clonez le repository :
 
 ```bash
-git clone <votre-repo-url>
+git clone https://github.com/yesminehe/webscraper-go
 cd webscraper
 ```
 
