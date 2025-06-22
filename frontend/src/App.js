@@ -10,10 +10,45 @@ import {
   useParams,
 } from "react-router-dom";
 
+function generateSitemapXml(links) {
+  const urls = links.map((link) => link.url);
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls
+    .map((url) => `  <url>\n    <loc>${url}</loc>\n  </url>`)
+    .join("\n")}\n</urlset>`;
+  return xml;
+}
+
+function downloadSitemap(links) {
+  const xml = generateSitemapXml(links);
+  const blob = new Blob([xml], { type: "application/xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "sitemap.xml";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function SEOList({ results }) {
   const navigate = useNavigate();
   return (
     <div>
+      <button
+        style={{
+          marginBottom: 16,
+          padding: "8px 20px",
+          background: "#1976d2",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+        onClick={() => downloadSitemap(results.links)}
+      >
+        Download Sitemap
+      </button>
       <h2>Results</h2>
       <p>Total links found: {results.totalLinks}</p>
       <ul style={{ listStyle: "none", padding: 0 }}>
