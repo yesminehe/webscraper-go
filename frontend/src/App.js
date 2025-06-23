@@ -49,6 +49,36 @@ function SEOList({ results }) {
       >
         Download Sitemap
       </button>
+      <button
+        style={{
+          marginBottom: 16,
+          marginLeft: 8,
+          padding: "8px 20px",
+          background: "#388e3c",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+        onClick={() => window.open("/api/export/json", "_blank")}
+      >
+        Export JSON
+      </button>
+      <button
+        style={{
+          marginBottom: 16,
+          marginLeft: 8,
+          padding: "8px 20px",
+          background: "#fbc02d",
+          color: "#fff",
+          border: "none",
+          borderRadius: 6,
+          cursor: "pointer",
+        }}
+        onClick={() => window.open("/api/export/csv", "_blank")}
+      >
+        Export CSV
+      </button>
       <h2>Results</h2>
       <p>Total links found: {results.totalLinks}</p>
       <ul style={{ listStyle: "none", padding: 0 }}>

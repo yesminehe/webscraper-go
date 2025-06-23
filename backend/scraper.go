@@ -1,13 +1,19 @@
 package main
 
 import (
+	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/gocolly/colly"
 )
+
+var latestScrapeResult *ScrapeResult
 
 func scrapeSite(startURL string, maxDepth int) (*ScrapeResult, error) {
 	allLinks := make(map[string]*LinkInfo)
@@ -104,7 +110,7 @@ func scrapeSite(startURL string, maxDepth int) (*ScrapeResult, error) {
 
 	err = c.Visit(startURL)
 	if err != nil {
-		return nil, fmt.Errorf("Erreur lors de la visite initiale: %v", err)
+		return nil, fmt.Errorf("erreur lors de la visite initiale: %v", err)
 	}
 	c.Wait()
 
@@ -131,9 +137,79 @@ func scrapeSite(startURL string, maxDepth int) (*ScrapeResult, error) {
 	for _, l := range allLinks {
 		links = append(links, l)
 	}
-	return &ScrapeResult{
+	result := &ScrapeResult{
 		TotalLinks: len(allLinks),
 		Links:      links,
 		Stats:      stats,
-	}, nil
+	}
+	latestScrapeResult = result
+	return result, nil
+}
+
+// ExportScrapeResultToJSON exports the scrape result to a JSON file.
+func ExportScrapeResultToJSON(result *ScrapeResult, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(result)
+}
+
+// ExportScrapeResultToCSV exports the scrape result to a CSV file.
+func ExportScrapeResultToCSV(result *ScrapeResult, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	writer.Write([]string{"URL", "Title", "Status", "Visited"})
+
+	for _, link := range result.Links {
+		writer.Write([]string{
+			link.URL,
+			link.Title,
+			fmt.Sprintf("%d", link.Status),
+			fmt.Sprintf("%v", link.Visited),
+		})
+	}
+	return nil
+}
+
+func exportJSONHandler(w http.ResponseWriter, r *http.Request) {
+	if latestScrapeResult == nil {
+		http.Error(w, "No scrape result available", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Disposition", "attachment; filename=\"scrape_result.json\"")
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(latestScrapeResult)
+}
+
+func exportCSVHandler(w http.ResponseWriter, r *http.Request) {
+	if latestScrapeResult == nil {
+		http.Error(w, "No scrape result available", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Disposition", "attachment; filename=\"scrape_result.csv\"")
+	w.Header().Set("Content-Type", "text/csv")
+	writer := csv.NewWriter(w)
+	writer.Write([]string{"URL", "Title", "Status", "Visited"})
+	for _, link := range latestScrapeResult.Links {
+		writer.Write([]string{
+			link.URL,
+			link.Title,
+			fmt.Sprintf("%d", link.Status),
+			fmt.Sprintf("%v", link.Visited),
+		})
+	}
+	writer.Flush()
 } 
